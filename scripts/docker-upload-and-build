@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+{ set +x; } 2>/dev/null
+
+usage() {
+    echo "usage: $(basename $0) user@hostname name path" 1>&2
+    [[ $1 == "-h" ]] || [[ $1 == "--help" ]]; exit
+}
+
+[[ $1 == "-h" ]] || [[ $1 == "--help" ]] && usage "$@"
+
+[[ $# != 3 ]] && usage
+[[ -z "$1" ]] && usage
+[[ -z "$2" ]] && usage
+
+ssh_hostname="$1"
+name="$2"
+path="$3"
+exclude_from="$3"/.dockerignore
+tmp_dir="$(set -x; ssh "$ssh_hostname" mktemp -d)" || exit
+
+[ -e "$exclude_from" ] && {
+    ( set -x; rsync -a --delete --exclude-from="$exclude_from" "$path"/ "$ssh_hostname":"$tmp_dir" ) || exit
+} || { ( set -x; rsync -a --delete "$path"/ "$ssh_hostname":"$tmp_dir" ) || exit; }
+( set -x; ssh "$ssh_hostname" sudo docker build -t "$name" "$tmp_dir" ) || exit
+( set -x; ssh "$ssh_hostname" rm -fr "$tmp_dir" ) || exit
+( set -x; ssh "$ssh_hostname" sudo docker images )
