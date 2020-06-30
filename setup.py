@@ -1,12 +1,8 @@
-from setuptools import setup
+import setuptools
 
-setup(
+setuptools.setup(
     name='docker-upload-and-build',
-    version='2020.5.27',
-    install_requires=[
-        'setuptools',
-    ],
-    scripts=[
-        'scripts/docker-upload-and-build',
-    ],
+    install_requires=open('requirements.txt').read().splitlines(),
+    packages=setuptools.find_packages(),
+    scripts=['scripts/docker-upload-and-build']
 )
